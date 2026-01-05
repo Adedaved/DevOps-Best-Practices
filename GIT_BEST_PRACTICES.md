@@ -33,8 +33,9 @@ Ignore macOS system files
 
 ### 3. Pull Before You Push
 Always sync with the remote branch before pushing:
-```bash
+
 git pull --rebase
+
 This avoids unnecessary merge commits and conflicts.
 
 ---
