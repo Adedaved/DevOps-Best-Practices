@@ -21,10 +21,14 @@ Bad:
 fix
 update
 changes
+
+---
+
 Good:
 Fix broken link in README
 Add Linux fundamentals documentation
 Ignore macOS system files
+
 ---
 
 ### 3. Pull Before You Push
@@ -33,7 +37,9 @@ Always sync with the remote branch before pushing:
 git pull --rebase
 This avoids unnecessary merge commits and conflicts.
 
-4. Use .gitignore Properly
+---
+
+### 4. Use .gitignore Properly
 
 Ignore files that do not belong in version control:
 	•	.DS_Store
@@ -42,23 +48,31 @@ Ignore files that do not belong in version control:
 	•	build artifacts
 	•	temporary downloads
 
-5. Keep One Repository = One Purpose
+---
+
+### 5. Keep One Repository = One Purpose
 
 A repository should have one clear goal.
 Avoid mixing unrelated projects in the same repo.
 
-6. Verify Before Pushing
+---
+
+### 6. Verify Before Pushing
 
 Before pushing, always check:
 git status
 git log -1
 This prevents accidental commits and mistakes.
 
-7. Use Branches for Experiments
+---
+
+### 7. Use Branches for Experiments
 Never experiment directly on main.
 git checkout -b feature-name
 
-8. Configure Your Git Identity Early
+---
+
+### 8. Configure Your Git Identity Early
 
 Set your name and email once:
 git config --global user.name "Your Name"
