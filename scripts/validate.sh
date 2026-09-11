@@ -20,11 +20,15 @@ else
   echo "WARNING: Terraform is not installed; skipping Terraform validation." >&2
 fi
 
-if command -v kubectl >/dev/null 2>&1; then
-  kubectl kustomize infrastructure/kubernetes/base > /tmp/sample-api-manifests.yaml
-  kubectl apply --dry-run=client --validate=true -f /tmp/sample-api-manifests.yaml
+if command -v kubectl >/dev/null 2>&1 && command -v kubeconform >/dev/null 2>&1; then
+  rendered_manifests="$(mktemp "${TMPDIR:-/tmp}/sample-api-manifests.XXXXXX.yaml")"
+  trap 'rm -f "$rendered_manifests"' EXIT
+  kubectl kustomize infrastructure/kubernetes/base > "$rendered_manifests"
+  kubeconform -strict -summary -kubernetes-version 1.31.0 "$rendered_manifests"
+  rm -f "$rendered_manifests"
+  trap - EXIT
 else
-  echo "WARNING: kubectl is not installed; skipping Kubernetes validation." >&2
+  echo "WARNING: kubectl and/or kubeconform is not installed; skipping offline Kubernetes validation." >&2
 fi
 
 if command -v docker >/dev/null 2>&1; then

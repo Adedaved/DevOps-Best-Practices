@@ -79,7 +79,7 @@ The application image runs as an unprivileged user and exposes only port 8080. D
 ./scripts/validate.sh
 ```
 
-This performs only local syntax/structure checks. Terraform is initialized with `-backend=false`; it does not authenticate to, plan against, or apply to any provider. Install Docker, Terraform, and kubectl to enable the corresponding optional checks.
+This performs only local syntax/structure checks. Terraform is initialized with `-backend=false`; it does not authenticate to, plan against, or apply to any provider. Install Docker, Terraform, kubectl, and kubeconform to enable the corresponding optional checks.
 
 ## Deployment contract
 
