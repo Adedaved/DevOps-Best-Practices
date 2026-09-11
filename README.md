@@ -88,13 +88,13 @@ Kubernetes manifests are intentionally **not** a deployment command. Before a re
 1. Replace the example image with a registry image pinned by digest.
 2. Set the target namespace and configure registry/workload identity outside this repository.
 3. Review resource requests, limits, replicas, HPA thresholds, PDB, and NetworkPolicy against the target cluster.
-4. Apply an environment-specific Kustomize overlay through an approved GitOps or CI/CD promotion process.
+4. Apply an environment-specific Kustomize overlay through an approved GitOps or CI/CD promotion process, including explicit, reviewed NetworkPolicy ingress sources.
 
 ## Engineering guardrails
 
 - CI tests the service, validates Terraform formatting/configuration, checks Kubernetes manifests, and builds the image without pushing it.
 - The container uses a minimal production base image, `NODE_ENV=production`, a fixed non-root UID, no Linux capabilities, and a read-only runtime filesystem in Kubernetes.
-- Kubernetes includes startup/liveness/readiness probes, resource controls, HPA, PDB, and default-deny ingress with explicit HTTP ingress.
+- Kubernetes includes startup/liveness/readiness probes, resource controls, HPA, PDB, and a default-deny ingress policy; environment overlays must explicitly permit approved sources.
 - Terraform sets required version constraints and passes consistent owner/environment/cost-center labels through a reusable module. It contains no credentials, backend, provider configuration, or billable resources.
 
 ## Security and contribution notes
