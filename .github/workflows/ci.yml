@@ -1,0 +1,70 @@
+name: Continuous Integration
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  service:
+    name: Test sample service
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Check JavaScript syntax
+        run: npm run lint
+      - name: Run unit tests
+        run: npm test
+
+  container:
+    name: Build container
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: service/Dockerfile
+      - name: Build without publishing
+        run: docker build --pull --tag devops-sample-api:${{ github.sha }} service
+
+  infrastructure:
+    name: Validate infrastructure
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+      - uses: azure/setup-kubectl@v4
+      - name: Verify Terraform formatting
+        run: terraform fmt -check -recursive infrastructure/terraform
+      - name: Initialize Terraform without a backend
+        working-directory: infrastructure/terraform/environments/dev
+        run: terraform init -backend=false
+      - name: Validate Terraform configuration
+        working-directory: infrastructure/terraform/environments/dev
+        run: terraform validate
+      - name: Install kubeconform v0.8.0
+        env:
+          KUBECONFORM_SHA256: 9bc2bffbf71f261128533edaf912153948b7ff238f9a531ae6d34466ec287883
+        run: |
+          curl --fail --location --silent --show-error \
+            --output "$RUNNER_TEMP/kubeconform.tar.gz" \
+            https://github.com/yannh/kubeconform/releases/download/v0.8.0/kubeconform-linux-amd64.tar.gz
+          echo "$KUBECONFORM_SHA256  $RUNNER_TEMP/kubeconform.tar.gz" | sha256sum --check --strict
+          tar --extract --gzip --file "$RUNNER_TEMP/kubeconform.tar.gz" --directory "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: Render Kubernetes manifests
+        run: kubectl kustomize infrastructure/kubernetes/base > .kubeconform-rendered.yaml
+      - name: Validate rendered Kubernetes manifests offline
+        run: kubeconform -strict -summary -kubernetes-version 1.31.0 .kubeconform-rendered.yaml
