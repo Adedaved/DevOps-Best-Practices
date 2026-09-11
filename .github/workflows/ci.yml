@@ -1,0 +1,60 @@
+name: Continuous Integration
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  service:
+    name: Test sample service
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Check JavaScript syntax
+        run: npm run lint
+      - name: Run unit tests
+        run: npm test
+
+  container:
+    name: Build container
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: service/Dockerfile
+      - name: Build without publishing
+        run: docker build --pull --tag devops-sample-api:${{ github.sha }} service
+
+  infrastructure:
+    name: Validate infrastructure
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+      - uses: azure/setup-kubectl@v4
+      - name: Verify Terraform formatting
+        run: terraform fmt -check -recursive infrastructure/terraform
+      - name: Initialize Terraform without a backend
+        working-directory: infrastructure/terraform/environments/dev
+        run: terraform init -backend=false
+      - name: Validate Terraform configuration
+        working-directory: infrastructure/terraform/environments/dev
+        run: terraform validate
+      - name: Render Kubernetes manifests
+        run: kubectl kustomize infrastructure/kubernetes/base > /tmp/sample-api-manifests.yaml
+      - name: Validate rendered Kubernetes manifests
+        run: kubectl apply --dry-run=client --validate=true -f /tmp/sample-api-manifests.yaml
